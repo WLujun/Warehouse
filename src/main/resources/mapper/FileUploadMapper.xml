@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dxd.dao.IFileUploadDAO">
+	
+	<!-- 查询返回精装修页面数据 -->
+	<select id="selectRenovationIMG" parameterType="java.lang.String" resultType="RenovationIMG">
+		SELECT pid amusementId,concat('/images/new/',fileurl) spic,sign position FROM (SELECT * FROM filesource WHERE pid = #{id} AND sign &lt;= 6 AND isdelete = 0 ORDER BY createtime DESC)temp GROUP BY sign
+	</select>
+	<!-- 上传图片 -->
+	<insert id="insert" parameterType="FileSource">
+		insert into filesource(pid,sign,filetype,fileurl,sku) values(#{pid},#{sign},#{filetype},#{fileurl},#{sku})
+	</insert>
+	<!-- 查询全部数据 -->
+	<select id="selectAll" resultType="FileSource">
+		SELECT * FROM filesource WHERE isdelete = 0
+	</select>
+	<!-- 查询图片地址返回sku资料库 -->
+	<select id="selectImagesURL" parameterType="FileSource" resultType="FileSource">
+		SELECT * FROM filesource 
+		<where>
+			<if test="pid != null">
+				pid = #{pid}
+			</if>
+			<if test="sku != null">
+				AND sku = #{sku}
+			</if>
+			<if test="sign != null">
+				AND sign = #{sign}
+			</if>
+				AND isdelete = 0
+		</where>
+	</select>
+	<!-- 删除数据  没用-->
+	<delete id="deleteImagesURL" parameterType="FileSource">
+		delete FROM filesource where pid = #{pid} and fileurl = #{fileurl}
+	</delete>
+	<!-- 假删除 -->
+	<update id="updateFilesource" parameterType="FileSource">
+		UPDATE filesource SET isdelete = 1 WHERE pid=#{pid} AND fileurl=#{fileurl} AND isdelete=0
+	</update>
+	<!-- 查询删除用户身份 -->
+	<select id="selectVideoUserId" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT r.display_name FROM t_admin a LEFT JOIN t_role r ON a.role_id = r.id WHERE a.id = #{userId}
+	</select>
+
+</mapper>

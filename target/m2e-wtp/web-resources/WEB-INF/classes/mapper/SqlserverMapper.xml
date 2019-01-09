@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dxd.dao.ISqlserverDAO">
+
+	<resultMap type="Product" id="pro">
+		<id property="id" column="iid"/>
+		<result property="sku"  column="sku"/>
+		<result property="duckweedTitle"  column="mpTitle"/>
+		<result property="barcode"  column="barcode"/>
+		<result property="totalInventory"  column="netInventory"/>
+		<result property="cdTotalInventory"  column="chengduNetInventory"/>
+		<result property="cdAllInventory"  column="chengDuNet"/>
+		<result property="dielectric"  column="dielectric"/>
+		<result property="spacking"  column="spacking"/>
+		<result property="dialogue"  column="dialogue"/>
+		<result property="subtitle"  column="ssubtitle"/>
+		<result property="kiwi"  column="sd"/>
+		<result property="videocoding"  column="svideocoding"/>
+		<result property="vocaltract"  column="audiochannel"/>
+		<result property="movietype"  column="stype"/>
+		<result property="director"  column="sdirector"/>
+		<result property="actor"  column="slead"/>
+		<result property="senclosure"  column="senclosure"/>
+		<result property="donsale"  column="donsale"/>
+		<result property="updateTime"  column="updateTime"/>
+	</resultMap>
+
+	
+	<select id="selectProduct" statementType="CALLABLE" resultMap="pro">
+		{call SP_Pagination(
+			'TO_COUNT',
+			'iid',
+			'iid asc',
+			 ${page},
+			 ${limit},
+			'iid,sku,mpTitle,barcode,netInventory,chengduNetInventory,chengDuNet,dielectric,spacking,dialogue,ssubtitle,sd,svideocoding,audiochannel,stype,sdirector,slead,senclosure,donsale,updateTime',
+"<trim prefix="" prefixOverrides="AND | OR">
+<if test="v.sku != null and v.sku != '' ">and sku = '${v.sku}' </if>
+<if test="v.state != null and v.state == '现货' ">and chengDuNet > 0 </if>
+<if test="v.type != null and v.type != '' ">and senclosure = '${v.type}' </if>
+<if test="v.dielectric != null and v.dielectric != '' ">and dielectric like '%${v.dielectric}%' </if>
+<if test="v.spacking != null and v.spacking != '' ">and spacking like '%${v.spacking}%' </if>
+<if test="v.subtitle != null and v.subtitle != '' ">and ssubtitle like '%${v.subtitle}%' </if>
+<if test="v.dialogue != null and v.dialogue != '' ">and dialogue like '%${v.dialogue}%' </if>
+<if test="v.audio != null and v.audio != '' ">and audiochannel like '%${v.audio}%' </if>
+<if test="v.kiwi != null and v.kiwi != '' ">and sd = '${v.kiwi}' </if>
+<if test="v.videocoding != null and v.videocoding != '' ">and svideocoding like '%${v.videocoding}%' </if>
+<if test="v.keyword != null and v.keyword != '' ">and mpTitle Like '%${v.keyword}%' </if>
+</trim>",
+			'')
+		}
+	</select>
+
+	<select id="selectAllProduct" statementType="CALLABLE" resultType="int">
+		{
+			call prcRowsCount(
+				'TO_COUNT',
+				'iid',
+				"<trim prefix="" prefixOverrides="AND | OR">
+<if test="v.sku != null and v.sku != '' ">and sku = '${v.sku}' </if>
+<if test="v.state != null and v.state == '现货' ">and chengDuNet > 0 </if>
+<if test="v.type != null and v.type != '' ">and senclosure = '${v.type}' </if>
+<if test="v.dielectric != null and v.dielectric != '' ">and dielectric like '%${v.dielectric}%' </if>
+<if test="v.spacking != null and v.spacking != '' ">and spacking like '%${v.spacking}%' </if>
+<if test="v.subtitle != null and v.subtitle != '' ">and ssubtitle like '%${v.subtitle}%' </if>
+<if test="v.dialogue != null and v.dialogue != '' ">and dialogue like '%${v.dialogue}%' </if>
+<if test="v.audio != null and v.audio != '' ">and audiochannel like '%${v.audio}%' </if>
+<if test="v.kiwi != null and v.kiwi != '' ">and sd = '${v.kiwi}' </if>
+<if test="v.videocoding != null and v.videocoding != '' ">and svideocoding like '%${v.videocoding}%' </if>
+<if test="v.keyword != null and v.keyword != '' ">and mpTitle Like '%${v.keyword}%' </if>
+</trim>"
+			)
+		}
+	</select>
+
+
+
+	<!-- <select id="selectProduct" resultMap="pro">
+		select 
+			top ${limit} * 
+		from 
+			(select row_number() over(order by iid asc) as rownumber,
+					iid,sku,mpTitle,barcode,netInventory,chengduNetInventory,chengDuNet,dielectric,
+					spacking,dialogue,ssubtitle,sd,svideocoding,audiochannel,stype,sdirector,slead,
+					senclosure,donsale,updateTime 
+			from TO_COUNT 
+			<where>
+				<if test="p.duckweedTitle != null">
+					mpTitle Like '%${p.duckweedTitle}%'
+				</if>
+				<if test="p.sku != null">
+					AND sku = #{p.sku}
+				</if>
+				<if test="v.state != null and v.state='现货'">
+					AND chengDuNet > 0
+				</if>
+				<if test="v.type != null">
+					AND 
+				</if>
+				<if test=""></if>
+				<if test=""></if>
+				<if test=""></if>
+				<if test=""></if>
+				<if test=""></if>
+				<if test=""></if>
+				<if test=""></if>
+			</where>
+			) temp_row where rownumber>((${page}-1)*${limit})
+	</select>
+	
+	<select id="selectAllProduct" parameterType="Product" resultMap="pro">
+		SELECT iid,sku,mpTitle,barcode,netInventory,chengduNetInventory,chengDuNet,dielectric,
+		spacking,dialogue,ssubtitle,sd,svideocoding,audiochannel,stype,sdirector,slead,senclosure,
+		donsale,updateTime FROM TO_COUNT 
+		<where>
+			<if test="duckweedTitle != null">
+				mpTitle Like '%${duckweedTitle}%'
+			</if>
+			<if test="sku != null">
+				AND sku = #{sku}
+			</if>
+		</where>
+	</select> -->
+	
+</mapper>

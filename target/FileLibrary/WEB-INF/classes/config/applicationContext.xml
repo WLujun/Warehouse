@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-4.0.xsd 
+		http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-4.0.xsd 
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-4.0.xsd"> 
+	<!-- 读取jdbc配置文件 -->
+	<context:property-placeholder location="classpath:config/jdbc.properties" />
+	<!-- 自动将Service层注入 -->
+	<context:component-scan base-package="com.dxd.service" /> 
+	<!-- dbcp数据源 -->
+	<bean id="dataSource1" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close"> 
+		<!--这里如果写成${jdbc.driver}，就会出现加载jdbc驱动失败的问题，暂时不清楚什么原因 -->
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" /> 
+		<!-- 连接池最大使用连接数 -->
+		<property name="maxActive" value="20" /> 
+		<!-- 初始化连接大小 -->
+		<property name="initialSize" value="1" /> 
+		<!-- 获取连接最大等待时间 -->
+		<property name="maxWait" value="60000" /> 
+		<!-- 连接池最大空闲 -->
+		<property name="maxPoolPreparedStatementPerConnectionSize" value="20" /> 
+		<!-- 连接池最小空闲 -->
+		<property name="minIdle" value="3" />
+		<!-- 自动清除无用连接 -->
+		<property name="removeAbandoned" value="true" />
+		<!-- 清除无用连接的等待时间 -->
+		<property name="removeAbandonedTimeout" value="180" />
+		<!-- 连接属性 -->
+		<property name="connectionProperties" value="clientEncoding=UTF-8" />
+	</bean>	
+	
+	<!-- dbcp 数据源  sqlserver-->
+	<bean id="dataSource2" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close"> 
+		<property name="driverClassName" value="${jdbc2.driver}" />
+		<property name="url" value="${jdbc2.url}" />
+		<property name="username" value="${jdbc2.username}" />
+		<property name="password" value="${jdbc2.password}" /> 
+		<property name="maxActive" value="20" /> 
+		<property name="initialSize" value="1" /> 
+		<property name="maxWait" value="60000" /> 
+		<property name="maxPoolPreparedStatementPerConnectionSize" value="20" /> 
+		<property name="minIdle" value="3" />
+		<property name="removeAbandoned" value="true" />
+		<property name="removeAbandonedTimeout" value="180" />
+		<property name="connectionProperties" value="clientEncoding=UTF-8" />
+	</bean>	
+	
+	<!-- 使用 DynamicDataSource 动态切换数据源 -->
+	<bean id="dataSource" class="com.dxd.utils.db.DynamicDataSource">
+        <property name="targetDataSources">
+            <map key-type="java.lang.String">
+                <entry key="dataSource1" value-ref="dataSource1"/>
+                <entry key="dataSource2" value-ref="dataSource2"/>
+            </map>
+        </property>
+        <!--默认数据源-->
+        <property name="defaultTargetDataSource" ref="dataSource1"/>
+    </bean>
+		
+	<!-- mybatis的配置文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:config/mybatis-config.xml" />
+		<property name="mapperLocations" value="classpath*:mapper/*Mapper.xml" />
+	</bean>	
+	<!-- spring与mybatis整合配置，扫描所有dao和所有mapper文件 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.dxd.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+	
+	
+	<!-- 配置事务管理组件 （Spring在jdbc中提供了一个事务管理组件：org.springframework.jdbc.datasource.DataSourceTransactionManager）-->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" /><!-- dataSource是连接池组件的bean -->
+	</bean>
+	
+	<!-- 方式一 -->
+	<!-- 采用注解方式：有源码的情况下，将注解加在方法上 -->
+	<!-- 开启事务注解标记@Transactional，当调用带@Transactional标记的方法时，将txManager的事务管理功能切入进去 -->
+	<!-- <tx:annotation-driven transactional-manager="transactionManager" /> -->
+	<!-- 在需要事务管理的方法上加上@Transactional注解即可 -->
+	
+	<!-- 方式二 使用xml配置方式 指定需要事务管理的方法 可以使用通配符指定  -->
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes> 
+			<!-- 写操作 -->
+			<tx:method name="save*" propagation="REQUIRED" isolation="DEFAULT" />
+			<tx:method name="modify*" propagation="REQUIRED" isolation="DEFAULT" />
+			<tx:method name="remove*" propagation="REQUIRED" isolation="DEFAULT" />
+			<tx:method name="batch*" propagation="REQUIRED" isolation="DEFAULT" /> 
+			<!-- 读操作 -->
+			<tx:method name="load*" propagation="REQUIRED" isolation="DEFAULT" read-only="true" />
+			<tx:method name="get*" propagation="REQUIRED" isolation="DEFAULT" read-only="true" />
+			<tx:method name="find*" propagation="REQUIRED" isolation="DEFAULT" read-only="true" />
+			<tx:method name="*" propagation="REQUIRED" isolation="DEFAULT" />
+		</tx:attributes>
+	</tx:advice>
+	
+	<bean id="dataSourceAspect" class="com.dxd.utils.db.DataSourceAspect"/>
+	
+	<!-- 通过aop机制完成事务管理 和 数据源切换 -->
+	<aop:config>
+		<aop:pointcut id="pc" expression="execution(* com.dxd.service.*.*(..))" /> 
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pc" order="2"/>
+		<aop:aspect ref="dataSourceAspect" order="1">
+            <aop:before pointcut-ref="pc" method="intercept" />
+        </aop:aspect>
+	</aop:config>
+		
+		
+		
+</beans>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dxd.dao.IWaterMarkDAO">
+	
+	<!-- 查询返回精装修页面数据 -->
+	<select id="selectMainImage" parameterType="java.lang.String" resultType="FileSource">
+		SELECT * FROM filesource WHERE pid = #{id} AND sign &lt;= 6 AND isdelete = 0
+	</select>
+	
+	<select id="selectSoption" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT soption FROM t_amusement where id = #{id}
+	</select>
+
+</mapper>
